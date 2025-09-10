@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="io.goorm.mybatisboard.mapper.PostMapper">
 
@@ -18,19 +18,19 @@
 
     <insert id="save" parameterType="io.goorm.mybatisboard.model.Post" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO posts (title, content, created_at, updated_at)
-        VALUES (#{title}, #{content}, #{createdAt}, #{updatedAt})
+        VALUES (#{title}, #{content}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     </insert>
 
     <update id="update">
-        UPDATE posts
-        SET title = #{post.title},
-            content = #{post.content},
-            updated_at = #{post.updatedAt}
+        UPDATE posts 
+        SET title = #{post.title}, 
+            content = #{post.content}, 
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
     </update>
 
     <delete id="delete" parameterType="long">
-        DELETE FROM posts
+        DELETE FROM posts 
         WHERE id = #{id}
     </delete>
 
