@@ -8,8 +8,10 @@ import java.util.List;
 
 @Mapper
 public interface PostMapper {
-    
-    List<Post> findAll();
+
+    List<Post> findAll(@Param("offset") int offset, @Param("size") int size);
+
+    int countAll();
     
     Post findById(@Param("id") Long id);
     

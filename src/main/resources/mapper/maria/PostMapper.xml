@@ -8,6 +8,12 @@
         SELECT id, title, content, created_at, updated_at
         FROM posts
         ORDER BY created_at DESC
+            LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM posts
     </select>
 
     <select id="findById" parameterType="long" resultType="io.goorm.mybatisboard.model.Post">

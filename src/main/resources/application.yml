@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    active:   h2  # 기본 활성 프로필 설정
+    active:   maria  # 기본 활성 프로필 설정
   
   # Thymeleaf Configuration
   thymeleaf:

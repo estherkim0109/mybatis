@@ -1,5 +1,6 @@
 package io.goorm.mybatisboard.service;
 
+import io.goorm.mybatisboard.dto.PageDto;
 import io.goorm.mybatisboard.dto.PostDetailDto;
 import io.goorm.mybatisboard.dto.PostFormDto;
 import io.goorm.mybatisboard.dto.PostListDto;
@@ -21,14 +22,26 @@ import java.util.stream.Collectors;
 public class PostService {
     
     private final PostMapper postMapper;
-    
-    public List<PostListDto> findAll() {
-        log.debug("Finding all posts");
-        List<Post> posts = postMapper.findAll();
-        log.debug("Found {} posts", posts.size());
-        return posts.stream()
+
+    public PageDto<PostListDto> findAll(int page, int size) {
+        log.debug("Finding posts with pagination: page={}, size={}", page, size);
+
+        // 전체 데이터 수 조회
+        int totalElements = postMapper.countAll();
+        log.debug("Total posts count: {}", totalElements);
+
+        // OFFSET 계산 (페이지는 1부터 시작)
+        int offset = (page - 1) * size;
+
+        // 페이징된 데이터 조회
+        List<Post> posts = postMapper.findAll(offset, size);
+        log.debug("Found {} posts for page {}", posts.size(), page);
+
+        List<PostListDto> postListDtos = posts.stream()
                 .map(this::convertToListDto)
                 .collect(Collectors.toList());
+
+        return PageDto.of(postListDtos, page, size, totalElements);
     }
     
     public PostDetailDto findBySeq(Long seq) {
