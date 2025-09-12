@@ -1,9 +1,6 @@
 package io.goorm.mybatisboard.service;
 
-import io.goorm.mybatisboard.dto.PageDto;
-import io.goorm.mybatisboard.dto.PostDetailDto;
-import io.goorm.mybatisboard.dto.PostFormDto;
-import io.goorm.mybatisboard.dto.PostListDto;
+import io.goorm.mybatisboard.dto.*;
 import io.goorm.mybatisboard.mapper.PostMapper;
 import io.goorm.mybatisboard.model.Post;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +90,15 @@ public class PostService {
         post.setContent(postFormDto.getContent());
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
-        
+
+        // 확장 필드 설정 (폼에서 입력받거나 기본값)
+        post.setCategoryId(postFormDto.getCategoryId() != null ? postFormDto.getCategoryId() : 2L);
+        post.setStatus("PUBLISHED");
+        post.setAuthorName(postFormDto.getAuthorName() != null && !postFormDto.getAuthorName().trim().isEmpty()
+                ? postFormDto.getAuthorName() : "작성자");
+        post.setViewCount(0);
+        post.setIsNotice(postFormDto.getIsNotice() != null ? postFormDto.getIsNotice() : false);
+
         postMapper.save(post);
         log.info("Post saved successfully with title: {}", postFormDto.getTitle());
         return post;
@@ -112,7 +117,15 @@ public class PostService {
         updatePost.setTitle(postFormDto.getTitle());
         updatePost.setContent(postFormDto.getContent());
         updatePost.setUpdatedAt(LocalDateTime.now());
-        
+
+        // 확장 필드 설정 (폼에서 입력받거나 기존값 유지)
+        updatePost.setCategoryId(postFormDto.getCategoryId() != null ? postFormDto.getCategoryId() : existingPost.getCategoryId());
+        updatePost.setStatus(existingPost.getStatus());
+        updatePost.setAuthorName(postFormDto.getAuthorName() != null && !postFormDto.getAuthorName().trim().isEmpty()
+                ? postFormDto.getAuthorName() : existingPost.getAuthorName());
+        updatePost.setViewCount(existingPost.getViewCount());
+        updatePost.setIsNotice(postFormDto.getIsNotice() != null ? postFormDto.getIsNotice() : existingPost.getIsNotice());
+
         postMapper.update(seq, updatePost);
         log.info("Post updated successfully seq: {}, title: {}", seq, postFormDto.getTitle());
         return postMapper.findById(seq);
@@ -135,14 +148,71 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setCreatedAt(post.getCreatedAt());
+
+        dto.setCategoryId(post.getCategoryId());
+        dto.setCategoryName(getCategoryName(post.getCategoryId()));
+        dto.setStatus(post.getStatus());
+        dto.setAuthorName(post.getAuthorName());
+        dto.setViewCount(post.getViewCount());
+        dto.setIsNotice(post.getIsNotice());
         return dto;
     }
-    
+
+    private String getCategoryName(Long categoryId) {
+        if (categoryId == null) return "미분류";
+        switch (categoryId.intValue()) {
+            case 1: return "공지사항";
+            case 2: return "일반";
+            case 3: return "질문";
+            case 4: return "정보공유";
+            case 5: return "자유게시판";
+            default: return "미분류";
+        }
+    }
+
     private PostDetailDto convertToDetailDto(Post post) {
         PostDetailDto dto = new PostDetailDto();
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
         dto.setCreatedAt(post.getCreatedAt());
+
+        dto.setCategoryId(post.getCategoryId());
+        dto.setCategoryName(getCategoryName(post.getCategoryId()));
+        dto.setStatus(post.getStatus());
+        dto.setAuthorName(post.getAuthorName());
+        dto.setViewCount(post.getViewCount());
+        dto.setIsNotice(post.getIsNotice());
+
         return dto;
+    }
+
+    // ========== 통합 검색 시스템 ==========
+
+    public PageDto<PostWithDetailsDto> findAllWithConditions(SearchConditionDto condition) {
+        log.debug("Finding posts with integrated search conditions: {}", condition.getSummary());
+
+        condition.validateAndCorrect();
+
+        int totalElements = postMapper.countAllWithConditions(condition);
+        log.debug("Total posts count with conditions: {}", totalElements);
+
+        List<PostWithDetailsDto> posts = postMapper.findAllWithConditions(condition);
+        log.debug("Found {} posts for page {}", posts.size(), condition.getPage());
+
+        return PageDto.of(posts, condition.getPage(), condition.getSize(), totalElements);
+    }
+
+    public List<CategoryDto> findAllCategories() {
+        log.debug("Finding all categories");
+        List<CategoryDto> categories = postMapper.findAllCategories();
+        log.debug("Found {} categories", categories.size());
+        return categories;
+    }
+
+    public List<CategoryDto> findActiveCategories() {
+        log.debug("Finding active categories");
+        List<CategoryDto> categories = postMapper.findActiveCategories();
+        log.debug("Found {} active categories", categories.size());
+        return categories;
     }
 }

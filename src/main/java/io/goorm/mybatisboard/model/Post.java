@@ -16,4 +16,9 @@ public class Post {
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long categoryId;       // 추가
+    private String authorName;    // 추가
+    private Boolean isNotice;
+    private String status;// 추가
+    private int viewCount;
 }

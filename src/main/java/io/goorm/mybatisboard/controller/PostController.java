@@ -4,6 +4,9 @@ import io.goorm.mybatisboard.dto.PageDto;
 import io.goorm.mybatisboard.dto.PostDetailDto;
 import io.goorm.mybatisboard.dto.PostFormDto;
 import io.goorm.mybatisboard.dto.PostListDto;
+import io.goorm.mybatisboard.dto.SearchConditionDto;
+import io.goorm.mybatisboard.dto.PostWithDetailsDto;
+import io.goorm.mybatisboard.dto.CategoryDto;
 import io.goorm.mybatisboard.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +62,24 @@ public class PostController {
         return "post/list";
     }
 
+    // ========== 통합 검색 엔드포인트 ==========
+    @GetMapping("/posts/search")
+    public String searchWithConditions(SearchConditionDto condition, Model model) {
+        log.info("Accessing integrated search with conditions: {}", condition.getSummary());
+
+        PageDto<PostWithDetailsDto> pageResult = postService.findAllWithConditions(condition);
+        List<CategoryDto> categories = postService.findActiveCategories();
+
+        log.debug("Found {} posts on page {}/{} with conditions",
+                pageResult.getContent().size(), condition.getPage(), pageResult.getTotalPages());
+
+        model.addAttribute("pageResult", pageResult);
+        model.addAttribute("condition", condition);
+        model.addAttribute("categories", categories);
+
+        return "post/search";
+    }
+
     // 게시글 상세 조회
     @GetMapping("/posts/{seq}")
     public String show(@PathVariable Long seq, Model model) {
@@ -80,10 +101,10 @@ public class PostController {
 
     // 게시글 저장 → 목록으로
     @PostMapping("/posts")
-    public String create(@ModelAttribute PostFormDto post, 
-                        RedirectAttributes redirectAttributes) {
+    public String create(@ModelAttribute PostFormDto post,
+                         RedirectAttributes redirectAttributes) {
         log.info("Creating new post with title: {}", post.getTitle());
-        
+
         postService.save(post);
         log.info("Post created successfully: {}", post.getTitle());
         redirectAttributes.addFlashAttribute("message", "flash.post.created");
@@ -95,12 +116,15 @@ public class PostController {
     public String editForm(@PathVariable Long seq, Model model) {
         log.info("Accessing edit form for post seq: {}", seq);
         PostDetailDto post = postService.findBySeq(seq);
-        
+
         // PostDetailDto를 PostFormDto로 변환
         PostFormDto formDto = new PostFormDto();
         formDto.setTitle(post.getTitle());
         formDto.setContent(post.getContent());
-        
+        formDto.setCategoryId(post.getCategoryId());
+        formDto.setAuthorName(post.getAuthorName());
+        formDto.setIsNotice(post.getIsNotice());
+
         log.debug("Loading post for edit: {}", post.getTitle());
         model.addAttribute("post", formDto);
         model.addAttribute("seq", seq);
@@ -109,11 +133,11 @@ public class PostController {
 
     // 게시글 수정 → 상세보기로
     @PostMapping("/posts/{seq}")
-    public String update(@PathVariable Long seq, 
-                        @ModelAttribute PostFormDto post, 
-                        RedirectAttributes redirectAttributes) {
+    public String update(@PathVariable Long seq,
+                         @ModelAttribute PostFormDto post,
+                         RedirectAttributes redirectAttributes) {
         log.info("Updating post seq: {} with title: {}", seq, post.getTitle());
-        
+
         postService.update(seq, post);
         log.info("Post updated successfully seq: {}", seq);
         redirectAttributes.addFlashAttribute("message", "flash.post.updated");
