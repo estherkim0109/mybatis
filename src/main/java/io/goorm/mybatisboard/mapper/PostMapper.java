@@ -20,4 +20,12 @@ public interface PostMapper {
     void update(@Param("id") Long id, @Param("post") Post post);
     
     void delete(@Param("id") Long id);
+
+    List<Post> findAllWithSearch(@Param("searchType") String searchType,
+                                 @Param("keyword") String keyword,
+                                 @Param("offset") int offset,
+                                 @Param("size") int size);
+
+    int countAllWithSearch(@Param("searchType") String searchType,
+                           @Param("keyword") String keyword);
 }
